@@ -1,0 +1,4 @@
+logs/
+*.lock*
+*.tfstate*
+**/**/.terraform/*
