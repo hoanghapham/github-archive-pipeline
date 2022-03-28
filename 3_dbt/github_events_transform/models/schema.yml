@@ -1,0 +1,21 @@
+version: 2 
+
+sources: 
+  - name: src_github
+    database: "{{ env_var('GCP_PROJECT_ID') }}"
+    loader: airflow
+    
+    tables: 
+      - name: events
+
+  - name: github_repos
+    database: bigquery-public-data
+    tables:
+      - name: languages
+
+models:
+  - name: github_repo_languages
+    description: Extracting languages used in a repository
+
+  - name: github_events
+    description: Extracting only PushEvent and CreateEvent from the source Github Archive events
