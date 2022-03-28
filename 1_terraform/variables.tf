@@ -1,9 +1,9 @@
 variable "project" {
-  default = "personal-39217"
+  type = string
 }
 
 variable "credentials_file" {
-  default = "/home/hapham/.google/credentials/google_credentials.json"
+  default = "~/.google/credentials/google_credentials.json"
 }
 
 variable "region" {
@@ -14,17 +14,18 @@ variable "zone" {
   default = "us-central1-a"
 }
 
-variable "owner_email" {
-  default = "hoangha.20021992@gmail.com"
-}
-
 // Cloud Storage config
 variable "storage_class" {
   description = "Storage class of a Google Cloud Storage bucket"
   default     = "STANDARD"
 }
 
+variable "data_bucket_name" {
+  description = "Name of the GCS bucket to store GitHub event data"
+  default     = "github_archive_data"
+}
+
 // BQ vars
 variable "dataset_id" {
-  default = "src_github_events"
+  default = "src_github"
 }

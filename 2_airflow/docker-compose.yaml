@@ -54,13 +54,21 @@ x-airflow-common:
     AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
     AIRFLOW__CORE__FERNET_KEY: ''
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
-    AIRFLOW__CORE__LOAD_EXAMPLES: 'true'
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     AIRFLOW__API__AUTH_BACKEND: 'airflow.api.auth.backend.basic_auth'
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
+    GOOGLE_APPLICATION_CREDENTIALS: /.google/credentials/google_credentials.json
+    AIRFLOW_HOME: /opt/airflow
+    BUCKET: "$GCS_BUCKET"
+    PROJECT_ID: "$GCP_PROJECT_ID"
+    DATASET_ID: "src_github"
+    TABLE_ID: "events"
   volumes:
     - ./dags:/opt/airflow/dags
     - ~/airflow/logs:/opt/airflow/logs
     - ./plugins:/opt/airflow/plugins
+    - ~/.google/credentials/:/.google/credentials:ro
+    - ./data:/opt/airflow/data
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
@@ -226,6 +234,7 @@ services:
         mkdir -p /sources/logs /sources/dags /sources/plugins
         chown -R "${AIRFLOW_UID}:0" /sources/{logs,dags,plugins}
         exec /entrypoint airflow version
+        apt-get install wget
     # yamllint enable rule:line-length
     environment:
       <<: *airflow-common-env

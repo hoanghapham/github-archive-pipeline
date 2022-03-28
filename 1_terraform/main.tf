@@ -16,22 +16,22 @@ provider "google" {
 }
 
 # BigQuery Data warehouse
-resource "google_bigquery_dataset" "src_github_events" {
-  dataset_id                 = "src_github_events"
+resource "google_bigquery_dataset" "src_github" {
+  dataset_id                 = var.dataset_id
   project                    = var.project
   delete_contents_on_destroy = true
 
   access {
     role          = "OWNER"
-    user_by_email = var.owner_email
+    special_group = "projectOwners"
   }
 }
 
 // Cloud Storage
 resource "google_storage_bucket" "github_archive" {
-  name     = "${var.project}_raw_github_archive"
+  name     = "${var.project}_${var.data_bucket_name}"
   location = var.region
-  project = var.project
+  project  = var.project
 
   storage_class = var.storage_class
 
