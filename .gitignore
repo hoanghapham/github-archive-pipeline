@@ -2,3 +2,6 @@ logs/
 *.lock*
 *.tfstate*
 **/**/.terraform/*
+**/__pycache__/*
+tmp/
+**/data/*
