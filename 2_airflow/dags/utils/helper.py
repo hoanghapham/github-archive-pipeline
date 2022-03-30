@@ -1,19 +1,15 @@
-import pandas as pd
-import pyarrow.csv as pv
-import pyarrow.parquet as pq
-import pyarrow
 from google.cloud import storage
 from google.cloud import bigquery
 from google.oauth2 import service_account
 from google.cloud.exceptions import NotFound
 import os 
+import json
+import requests
+import gzip
+from multiprocessing import Pool
+from custom_logger import init_logger
 
-def format_to_parquet(src_file):
-    if not src_file.endswith('.csv'):
-        logging.error("Can only accept source files in CSV format, for the moment")
-        return
-    table = pyarrow.csv.read_csv(src_file)
-    pyarrow.parquet.write_table(table, src_file.replace('.csv', '.parquet'))
+logger = init_logger(__name__)
 
 def upload_to_gcs(bucket, object_name, local_file):
     """
@@ -70,10 +66,10 @@ def gcs_to_bigquery_table(bucket, file_path, schema_path, destination_table_id, 
         
     # Check file existence
     uri = f"gs://{bucket}/{file_path}"
-    print(f"Checking file {uri}")
+    logger.info(f"Checking file {uri}")
     if storage.Blob(bucket=bucket_obj, name=file_path).exists(storage_client):
         
-        print("File found, loading to BigQuery...")
+        logger.info("File found, loading to BigQuery...")
 
         load_job = bigquery_client.load_table_from_uri(
             uri, destination_table_id, job_config=job_config
@@ -82,7 +78,48 @@ def gcs_to_bigquery_table(bucket, file_path, schema_path, destination_table_id, 
         load_job.result()
 
         destination_table = bigquery_client.get_table(destination_table_id)
-        print("Loaded {} rows.".format(destination_table.num_rows))
+        logger.info("Loaded {} rows.".format(destination_table.num_rows))
     else:
         raise Exception(f"File not found: {uri}")
         
+
+def download_files(execution_date, hour, download_dir):
+    logger.info(f"Downloading data of date {execution_date} - hour {hour}")
+    url = f"https://data.gharchive.org/{execution_date}-{hour}.json.gz"
+    req = requests.get(url)
+    output_dir_path = f"{download_dir}/{execution_date}"
+    os.makedirs(output_dir_path, exist_ok=True)
+
+    byte_content = gzip.decompress(req.content)
+
+    with open(f"{output_dir_path}/{hour}.json", 'bw') as f:
+        f.write(byte_content)
+    
+
+def filter_events(in_file_path, out_dir_path, out_suffix):
+    logger.info("Filtering events")
+    create_events = []
+    push_events = []
+
+    with open(in_file_path, 'r') as f:
+        while True:
+            line = f.readline()
+            if line:
+                json_line = json.loads(line)
+                if json_line['type'] == 'CreateEvent':
+                    create_events.append(json_line)
+                elif json_line['type'] == 'PushEvent':
+                    push_events.append(json_line)
+                else:
+                    next
+            else:
+                break
+    with open(f"{out_dir_path}/create_events_{out_suffix}.json", 'a') as f:
+        json.dump(create_events, f)
+    with open(f"{out_dir_path}/push_events_{out_suffix}.json", 'a') as f:
+        json.dump(push_events, f)
+
+def parallel_process(func, args_list, process_num=4):
+    logger.info(f"Init {process_num} parallel processes")
+    with Pool(process_num) as p:
+        p.starmap(func, args_list)
