@@ -15,10 +15,8 @@ To answer those questions, this is the setup I used:
 
 
 ## Caveats
-- Due to time constraint, the current set up can only be run locally. 
+- The current setup can only be run locally (setting up & run Cloud Composer is quite costly)
 - The amount of event data is too large, so loading three years' worth of data (2019 - 2022) will take too much time. For demonstration purpose, I only have a slice of 2019 data.
-- There are too many schema changes between raw JSON files of different dates that make the final BigQuery upload task fails, and I have not had the time to investigate it yet.
-
 
 ## Instruction
 - First, supply values for these variables in your environment:
@@ -31,7 +29,7 @@ To answer those questions, this is the setup I used:
     - BigQuery dataset: `src_github`
     - Cloud Storage bucket: `your-project-id_github_archive_data`
 - Go to `2_airflow`, run `docker compose up` to start building & running the Airflow image. The image uses the environment variables mentioned above.
-- When the initialization is done, go to Airflow UI and enable the DAG `github_event_ingestion` to start processing the data. The pipeline will create an `events` table inside the `src_github` dataset. You can also change the `start_date` and `end_date` params in the dag file to download data of the period you want. However, the full workflow currently only works with 2019 period.
+- When the initialization is done, go to Airflow UI and enable the DAG `github_event_ingestion_v2` to start processing the data. The pipeline will create two tables: `create_events` and `push_events` inside the `src_github` dataset. You can also change the `start_date` and `end_date` params in the dag file to download data of the period you want. However, the full workflow currently only works with 2019 period.
 - Next, Go to `3_dbt/github_event_transform`. Set up the dbt profile `github_events_transform` like in the sample `profiles.yml` file (specifying the path to credentials and your Google Cloud project.)
 - Make sure you already have dbt version 1.0.0 and above. Run `dbt build`. This will create the following tables in your data warehouse
     - `fact_github_activities_daily`
