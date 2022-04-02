@@ -6,7 +6,18 @@ sources:
     loader: airflow
     
     tables: 
-      - name: events
+      - name: create_events
+        description: Table contains only CreateEvent types from the event stream
+        columns: 
+          - name: id
+            tests: 
+              - unique
+      - name: push_events
+        description: Table contains only PushEvent types from the event stream
+        columns: 
+          - name: id
+            tests:
+              - unique
 
   - name: github_repos
     database: bigquery-public-data
@@ -19,3 +30,7 @@ models:
 
   - name: github_events
     description: Extracting only PushEvent and CreateEvent from the source Github Archive events
+    columns: 
+      - name: id
+        tests:
+          - unique
