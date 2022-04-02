@@ -1,3 +1,7 @@
-apache-airflow-providers-google
-google-cloud-bigquery
-google-cloud-storage
+apache-airflow-providers-google==6.7.0
+google-cloud-bigquery==2.34.2
+google-cloud-bigquery-datatransfer==3.6.1
+google-cloud-bigquery-storage==2.13.0
+google-cloud-storage==1.44.0
+billiard==3.6.4.0
+requests==2.27.1
