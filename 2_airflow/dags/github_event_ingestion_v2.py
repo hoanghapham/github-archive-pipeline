@@ -85,7 +85,7 @@ with DAG(
     schedule_interval="@daily",
     default_args=default_args,
     catchup=True,
-    max_active_runs=2,
+    max_active_runs=3,
     tags=['github']
 ) as dag:
 
