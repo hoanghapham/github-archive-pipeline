@@ -40,7 +40,7 @@ def download_to_local(data_path, execution_date):
         args_list=list(zip(repeat(execution_date), range(24), repeat(data_path))),
     )
 
-def filter_data(data_path, execution_date, included_events=['CreateEvent', 'PushEvent']):
+def filter_data(data_path, execution_date, included_events=['CreateEvent']):
     in_file_paths = [os.path.join(data_path, execution_date, f"{i}.json") for i in range(24)]
     out_folder_paths = repeat(os.path.join(data_path, execution_date), 24)
     suffix = [f"{execution_date.replace('-', '')}{i:02d}" for i in range(24)]
@@ -55,7 +55,7 @@ def filter_data(data_path, execution_date, included_events=['CreateEvent', 'Push
         process_num=4
     )
 
-def compress_data(data_path, execution_date, included_events=['CreateEvent', 'PushEvent'], **context):
+def compress_data(data_path, execution_date, included_events=['CreateEvent'], **context):
 
     suffix = execution_date.replace('-', '')
 
@@ -69,7 +69,7 @@ def compress_data(data_path, execution_date, included_events=['CreateEvent', 'Pu
                 with open(os.path.join(data_path, execution_date, f"{event}_{suffix}{i:02d}.json"), 'rb') as infile:
                     shutil.copyfileobj(infile,outfile)
 
-def upload_data(data_path, execution_date, bucket, included_events=['CreateEvent', 'PushEvent']):
+def upload_data(data_path, execution_date, bucket, included_events=['CreateEvent']):
     
     suffix = execution_date.replace('-','')
 
@@ -165,25 +165,20 @@ with DAG(
         }
     )
 
-    create_PushEvent_table_task = PythonOperator(
-        task_id="create_PushEvent_table_task", 
-        python_callable=helper.gcs_to_bigquery_table,
-        op_kwargs={
-            "bucket": bucket,
-            "file_path": "{{ task_instance.xcom_pull(task_ids='compress_data_task', key='PushEvent') }}",
-            "schema_path": schema_path,
-            "destination_table_id": f"{project_id}.{dataset_id}.push_events",
-            "partition_field": "created_at"
-        }
-    )
+    # create_PushEvent_table_task = PythonOperator(
+    #     task_id="create_PushEvent_table_task", 
+    #     python_callable=helper.gcs_to_bigquery_table,
+    #     op_kwargs={
+    #         "bucket": bucket,
+    #         "file_path": "{{ task_instance.xcom_pull(task_ids='compress_data_task', key='PushEvent') }}",
+    #         "schema_path": schema_path,
+    #         "destination_table_id": f"{project_id}.{dataset_id}.push_events",
+    #         "partition_field": "created_at"
+    #     }
+    # )
 
-    gen_params_task \
-        >> download_to_local_task \
-        >> filter_data_task \
-        >> compress_data_task \
-        >> clear_raw_files_task \
-        >> upload_to_gcs_task \
-        >> clear_local_files_task
-    
-    upload_to_gcs_task >> create_CreateEvent_table_task
-    upload_to_gcs_task >> create_PushEvent_table_task
+    gen_params_task >> download_to_local_task >> filter_data_task >> compress_data_task
+    compress_data_task >> upload_to_gcs_task
+    compress_data_task >> clear_raw_files_task
+    upload_to_gcs_task >> clear_local_files_task
+    upload_to_gcs_task >> create_CreateEvent_table_task 
