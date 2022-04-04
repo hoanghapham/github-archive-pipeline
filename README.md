@@ -16,7 +16,7 @@ To answer those questions, this is the setup I used:
 
 ## Caveats
 - The current setup can only be run locally (setting up & run Cloud Composer is quite costly)
-- The amount of event data is too large, so loading three years' worth of data (2019 - 2022) will take too much time. For demonstration purpose, I only have a slice of 2019 data.
+- The amount of event data is too large, so loading three years' worth of data (2019 - 2022) will take too much time. For demonstration purpose, I only have a slice of 2019-2020 data.
 
 ## Instruction
 - First, supply values for these variables in your environment:
