@@ -63,8 +63,14 @@ def compress_data(data_path, execution_date, included_events=['CreateEvent'], **
     for event in included_events:
         task_instance.xcom_push(key=event, value=f"{event}_{suffix}.json.gz")
 
+    
     for event in included_events:
-        with gzip.open(os.path.join(data_path, execution_date, f"{event}_{suffix}.json.gz"), 'ab', 5) as outfile:
+        file_path = os.path.join(data_path, execution_date, f"{event}_{suffix}.json.gz")
+                                 
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        
+        with gzip.open(file_path, 'ab', 5) as outfile:
             for i in range(24):
                 with open(os.path.join(data_path, execution_date, f"{event}_{suffix}{i:02d}.json"), 'rb') as infile:
                     shutil.copyfileobj(infile,outfile)
@@ -74,10 +80,11 @@ def upload_data(data_path, execution_date, bucket, included_events=['CreateEvent
     suffix = execution_date.replace('-','')
 
     for event in included_events:
+        file_name = f"{event}_{suffix}.json.gz"
         helper.upload_to_gcs(
             bucket, 
-            f"{event}_{suffix}.json.gz", 
-            os.path.join(data_path, execution_date, f"{event}_{suffix}.json.gz")
+            file_name, 
+            os.path.join(data_path, execution_date, file_name)
         )
 
 with DAG(
@@ -164,18 +171,6 @@ with DAG(
             "partition_field": "created_at"
         }
     )
-
-    # create_PushEvent_table_task = PythonOperator(
-    #     task_id="create_PushEvent_table_task", 
-    #     python_callable=helper.gcs_to_bigquery_table,
-    #     op_kwargs={
-    #         "bucket": bucket,
-    #         "file_path": "{{ task_instance.xcom_pull(task_ids='compress_data_task', key='PushEvent') }}",
-    #         "schema_path": schema_path,
-    #         "destination_table_id": f"{project_id}.{dataset_id}.push_events",
-    #         "partition_field": "created_at"
-    #     }
-    # )
 
     gen_params_task >> download_to_local_task >> filter_data_task >> compress_data_task
     compress_data_task >> upload_to_gcs_task
