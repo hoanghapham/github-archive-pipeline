@@ -24,20 +24,6 @@ with stg_events as (
       and date(created_at) >= coalesce((select max(date(created_at)) from {{ this }}), '1900-01-01')
     {% endif %}
 
-    union all 
-
-    select
-      id
-      , created_at
-      , type
-      , repo
-      , org
-      , actor
-    from {{ source('src_github', 'push_events') }}
-    where true
-    {% if is_incremental() %}
-      and date(created_at) >= coalesce((select max(date(created_at)) from {{ this }}), '1900-01-01')
-    {% endif %}
 )
 
 select

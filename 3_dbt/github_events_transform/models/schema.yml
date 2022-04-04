@@ -12,12 +12,6 @@ sources:
           - name: id
             tests: 
               - unique
-      - name: push_events
-        description: Table contains only PushEvent types from the event stream
-        columns: 
-          - name: id
-            tests:
-              - unique
 
   - name: github_repos
     database: bigquery-public-data

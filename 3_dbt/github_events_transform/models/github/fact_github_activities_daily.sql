@@ -14,7 +14,6 @@ select
   date(created_at) as report_date
   , count(distinct repo_id) as active_repos_number
   , count(case when type = 'CreateEvent' then 1 else null end) as create_events_number
-  , count(case when type = 'PushEvent' then 1 else null end) as push_events_number
 from {{ ref('github_events') }}
 where true
 {% if is_incremental() %}
