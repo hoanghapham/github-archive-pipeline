@@ -90,9 +90,12 @@ def download_file(execution_date, hour, download_dir):
     output_dir_path = os.path.join(download_dir, execution_date)
     os.makedirs(output_dir_path, exist_ok=True)
 
+    file_path = f"{output_dir_path}/{hour}.json"
+    
+    logger.info(f"Decompress and write to {file_path}")
     byte_content = gzip.decompress(req.content)
 
-    with open(f"{output_dir_path}/{hour}.json", 'bw') as f:
+    with open(file_path, 'bw') as f:
         f.write(byte_content)
     
 
