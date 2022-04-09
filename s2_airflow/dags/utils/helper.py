@@ -41,20 +41,6 @@ def gcs_to_bigquery_table(bucket, file_path, schema_path, destination_table_id, 
     schema = bigquery_client.schema_from_json(schema_path)
     suffix = execution_date.replace('-', '')
     
-    # Handle new write & append write
-    # try: 
-    #     bigquery_client.get_table(destination_table_id)
-    #     job_config = bigquery.LoadJobConfig(
-    #         source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON
-    #         , schema=schema
-    #         , write_disposition=bigquery.WriteDisposition.WRITE_APPEND
-    #         , time_partitioning=bigquery.TimePartitioning(
-    #             type_=bigquery.TimePartitioningType.DAY,
-    #             field=partition_field, 
-    #         )
-            
-    #     )
-    # except NotFound:
     job_config = bigquery.LoadJobConfig(
         source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON
         , schema=schema
