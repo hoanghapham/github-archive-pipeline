@@ -18,8 +18,8 @@ schema_path = "./dags/schemas/events.json"
 
 default_args = {
     "owner": "airflow",
-    "start_date": "2019-01-01",
-    "end_date": "2019-12-31",
+    "start_date": "2020-01-01",
+    "end_date": "2020-12-31",
     "depend_on_past": False,
     "retries": 1,
 }
@@ -168,7 +168,8 @@ with DAG(
             "file_path": "{{ task_instance.xcom_pull(task_ids='compress_data_task', key='CreateEvent') }}",
             "schema_path": schema_path,
             "destination_table_id": f"{project_id}.{dataset_id}.create_events",
-            "partition_field": "created_at"
+            "partition_field": "created_at",
+            "execution_date": "{{ task_instance.xcom_pull(task_ids='gen_params_task', key='execution_date') }}"
         }
     )
 
