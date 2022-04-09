@@ -31,7 +31,7 @@ def upload_to_gcs(bucket, object_name, local_file):
     logger.info(f"Uploading {local_file} to {bucket}")
     blob.upload_from_filename(local_file)
 
-def gcs_to_bigquery_table(bucket, file_path, schema_path, destination_table_id, partition_field):
+def gcs_to_bigquery_table(bucket, file_path, schema_path, destination_table_id, partition_field, execution_date):
 
     # Construct BigQuery & storage client objects.
 
@@ -39,30 +39,41 @@ def gcs_to_bigquery_table(bucket, file_path, schema_path, destination_table_id, 
     storage_client = storage.Client()
     bucket_obj = storage_client.bucket(bucket)
     schema = bigquery_client.schema_from_json(schema_path)
-
+    suffix = execution_date.replace('-', '')
+    
     # Handle new write & append write
+    # try: 
+    #     bigquery_client.get_table(destination_table_id)
+    #     job_config = bigquery.LoadJobConfig(
+    #         source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON
+    #         , schema=schema
+    #         , write_disposition=bigquery.WriteDisposition.WRITE_APPEND
+    #         , time_partitioning=bigquery.TimePartitioning(
+    #             type_=bigquery.TimePartitioningType.DAY,
+    #             field=partition_field, 
+    #         )
+            
+    #     )
+    # except NotFound:
+    job_config = bigquery.LoadJobConfig(
+        source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON
+        , schema=schema
+        , write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE
+        , time_partitioning=bigquery.TimePartitioning(
+            type_=bigquery.TimePartitioningType.DAY,
+            field=partition_field, 
+        )
+    )
+    
+    # Check table existence
     try: 
         bigquery_client.get_table(destination_table_id)
-        job_config = bigquery.LoadJobConfig(
-            source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON
-            , schema=schema
-            , write_disposition=bigquery.WriteDisposition.WRITE_APPEND
-            , time_partitioning=bigquery.TimePartitioning(
-                type_=bigquery.TimePartitioningType.DAY,
-                field=partition_field, 
-            )
-            
-        )
     except NotFound:
-        job_config = bigquery.LoadJobConfig(
-            source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON
-            , schema=schema
-            , write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE
-            , time_partitioning=bigquery.TimePartitioning(
-                type_=bigquery.TimePartitioningType.DAY,
-                field=partition_field, 
-            )
-        )
+        logger.info(f"Table {destination_table_id} not found, creating new...")
+        destination = destination_table_id
+    else:
+        logger.info(f"Table {destination_table_id} found, replacing partition {suffix}...")
+        destination = f"{destination_table_id}${suffix}"
         
     # Check file existence
     uri = f"gs://{bucket}/{file_path}"
@@ -72,12 +83,12 @@ def gcs_to_bigquery_table(bucket, file_path, schema_path, destination_table_id, 
         logger.info("File found, loading to BigQuery...")
 
         load_job = bigquery_client.load_table_from_uri(
-            uri, destination_table_id, job_config=job_config
+            uri, destination, job_config=job_config
         )  
 
         load_job.result()
 
-        destination_table = bigquery_client.get_table(destination_table_id)
+        destination_table = bigquery_client.get_table(destination)
         logger.info("Loaded {} rows.".format(destination_table.num_rows))
     else:
         raise Exception(f"File not found: {uri}")
