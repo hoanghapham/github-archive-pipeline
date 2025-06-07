@@ -56,7 +56,3 @@ The pipeline will do the following things:
     - `github_repo_languages` 
 
 The two fact tables will be used to create visualizations.
-
-
-## Demonstration dashboard
-https://datastudio.google.com/reporting/0e1e3e18-d5be-4aea-a627-ba77de0b8cb3
